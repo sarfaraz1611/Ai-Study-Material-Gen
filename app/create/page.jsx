@@ -1,8 +1,8 @@
 "use client";
 import React, { useState } from "react";
 import SelectOption from "./_components/SelectOption";
-import { Button } from "./../../components/ui/button";
-import TopicInput from "./_components/Topicinput";
+import { Button } from "../../components/ui/button";
+import TopicInput from "./_components/TopicInput";
 import { v4 as uuidv4 } from "uuid";
 import axios from "axios";
 import { useUser } from "@clerk/nextjs";
@@ -32,7 +32,7 @@ function Create() {
   const GenerateCourseOutline = async () => {
     const courseId = uuidv4();
     setLoading(true);
-    const result = await axios.post("/api/generate-course", {
+    const result = await axios.post("/api/generate-course-outline", {
       courseId: courseId,
       ...formData,
       createdBy: user?.primaryEmailAddress?.emailAddress,
@@ -81,7 +81,7 @@ function Create() {
           <Button onClick={() => setStep(step + 1)}>Next</Button>
         ) : (
           <Button onClick={GenerateCourseOutline} disabled={loading}>
-            {loading ? <><Loader className=" animate-spin" />  Generating ...</>: "Generate"}
+            {loading ? <Loader className=" animate-spin" /> : "Generate"}
           </Button>
         )}
       </div>

@@ -1,53 +1,65 @@
+import { db } from "../configs/db";
 import { inngest } from "./client";
-import { db } from "../configs/db.js";
 import {
   CHAPTER_NOTES_TABLE,
-  USER_TABLE,
   STUDY_MATERIAL_TABLE,
   STUDY_TYPE_CONTENT_TABLE,
-} from "../configs/schema.js";
+  USER_TABLE,
+} from "../configs/schema";
 import { eq } from "drizzle-orm";
 import {
+  courseOutlineAIModel,
   generateNotesAiModel,
   GenerateQuizAiModel,
   GenerateStudyTypeContentAiModel,
 } from "../configs/AiModel";
 
-export const CreateAccountUser = inngest.createFunction(
-  { id: "CreateAccount" },
-  { event: "Create-Account" },
+export const helloWorld = inngest.createFunction(
+  { id: "hello-world" },
+  { event: "test/hello.world" },
   async ({ event, step }) => {
-    // get Event Data
+    await step.sleep("wait-a-moment", "1s");
+    return { event, body: "Hello, World!" };
+  }
+);
+
+export const CreateNewUser = inngest.createFunction(
+  { id: "create-user", retries: 1 },
+  { event: "user.create" },
+  async ({ event, step }) => {
     const { user } = event.data;
+    // Get Event Data
+    const result = await step.run(
+      "Check User and create New if Not in DB",
+      async () => {
+        // Check Is User Already Exist
+        const result = await db
+          .select()
+          .from(USER_TABLE)
+          .where(eq(USER_TABLE.email, user?.primaryEmailAddress?.emailAddress));
 
-    const result = await step.run("Check Data exists in DB", async () => {
-      const email = user?.primaryEmailAddress?.emailAddress;
+        if (result?.length == 0) {
+          //If Not, Then add to DB
+          const userResp = await db
+            .insert(USER_TABLE)
+            .values({
+              name: user?.fullName,
+              email: user?.primaryEmailAddress?.emailAddress,
+            })
+            .returning({ USER_TABLE });
+          return userResp;
+        }
 
-      if (!email) {
-        throw new Error("User email not found");
+        return result;
       }
-
-      const existingUser = await db
-        .select()
-        .from(USER_TABLE)
-        .where(eq(USER_TABLE.email, email));
-
-      if (existingUser.length === 0) {
-        // Create new user
-        const newUser = await db.insert(USER_TABLE).values({
-          name: user?.fullName || "Unknown",
-          email: email,
-          isMember: false,
-        });
-        return newUser;
-      }
-      return existingUser;
-    });
+    );
 
     return "Success";
   }
-  //   Step to send email to user
-  // step to send email to user  after 3 days
+
+  // Step is to Send Welecome Email notification
+
+  // Step to Send Email notification After 3 Days Once user join it
 );
 
 export const GenerateNotes = inngest.createFunction(
@@ -60,46 +72,26 @@ export const GenerateNotes = inngest.createFunction(
     const notesResult = await step.run("Generate Chapter Notes", async () => {
       const Chapters = course?.courseLayout?.chapters;
       let index = 0;
-
+      // Chapters.forEach(async(chapter)=>{
       for (const chapter of Chapters) {
-        try {
-          // Create a more concise prompt to avoid length issues
-          const chapterContent = JSON.stringify(chapter).substring(0, 4000); // Reduce limit to avoid API limits
-          const PROMPT = `Generate ${course?.courseType} material content for this chapter. Include notes for each topic, code examples in <precode> tags, highlight key points, and format in HTML (no HTML/HEAD/BODY tags). Chapter: ${chapterContent}`;
+        // Used for loop to make async Call and wait to complete execution
+        const PROMPT =
+          "Generate " +
+          course?.courseType +
+          " material detail content for each chapter , Make sure to give notes for each topics from chapters, Code example if applicable in <precode> tag also markHeight the key points and add style for each tags and give the response in HTML format (Do not Add HTML , Head, Body, title tag), The chapter content is :" +
+          JSON.stringify(chapter) +
+          " ";
+        const result = await generateNotesAiModel.sendMessage(PROMPT);
+        const aiResp = result.response.text();
+        console.log(PROMPT);
+        await db.insert(CHAPTER_NOTES_TABLE).values({
+          chapterId: index,
+          courseId: course?.courseId,
+          notes: aiResp,
+        });
+        index = index + 1;
 
-          console.log(
-            `Generating notes for chapter ${index}, prompt length: ${PROMPT.length}`
-          );
-          console.log(
-            `Chapter content preview: ${chapterContent.substring(0, 200)}...`
-          );
-
-          const result = await generateNotesAiModel(PROMPT);
-
-          if (
-            !result.candidates ||
-            !result.candidates[0] ||
-            !result.candidates[0].content ||
-            !result.candidates[0].content.parts ||
-            !result.candidates[0].content.parts[0]
-          ) {
-            throw new Error("Invalid response structure from Gemini API");
-          }
-
-          const aiResp = result.candidates[0].content.parts[0].text;
-
-          await db.insert(CHAPTER_NOTES_TABLE).values({
-            chapterId: index,
-            courseId: course?.courseId,
-            notes: aiResp,
-          });
-
-          console.log(`Successfully generated notes for chapter ${index}`);
-          index = index + 1;
-        } catch (error) {
-          console.error(`Error generating notes for chapter ${index}:`, error);
-          throw error;
-        }
+        // })
       }
       return Chapters;
     });
@@ -120,32 +112,7 @@ export const GenerateNotes = inngest.createFunction(
   }
 );
 
-// Helper function to clean AI response and extract JSON
-const cleanAndParseAIResponse = (text) => {
-  try {
-    // Remove markdown code blocks if present
-    let cleanedText = text.trim();
-
-    // Remove ```json and ``` markers
-    if (cleanedText.startsWith("```json")) {
-      cleanedText = cleanedText.replace(/^```json\s*/, "");
-    }
-    if (cleanedText.startsWith("```")) {
-      cleanedText = cleanedText.replace(/^```\s*/, "");
-    }
-    if (cleanedText.endsWith("```")) {
-      cleanedText = cleanedText.replace(/\s*```$/, "");
-    }
-
-    // Try to parse as JSON
-    return JSON.parse(cleanedText);
-  } catch (error) {
-    console.error("Error parsing AI response:", error);
-    console.error("Raw response:", text);
-    throw new Error(`Failed to parse AI response as JSON: ${error.message}`);
-  }
-};
-
+// Used to generate Flashcard, Quiz, Question Answer
 export const GenerateStudyTypeContent = inngest.createFunction(
   { id: "Generate Study Type Content", retries: 1 },
   { event: "studyType.content" },
@@ -158,10 +125,9 @@ export const GenerateStudyTypeContent = inngest.createFunction(
       async () => {
         const result =
           studyType == "Flashcard"
-            ? await GenerateStudyTypeContentAiModel(prompt)
-            : await GenerateQuizAiModel(prompt);
-        const rawText = result.candidates[0].content.parts[0].text;
-        const AIResult = cleanAndParseAIResponse(rawText);
+            ? await GenerateStudyTypeContentAiModel.sendMessage(prompt)
+            : await GenerateQuizAiModel.sendMessage(prompt);
+        const AIResult = JSON.parse(result.response.text());
         return AIResult;
       }
     );

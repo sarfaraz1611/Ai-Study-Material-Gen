@@ -1,39 +1,40 @@
 "use client";
+import { db } from "../configs/db";
+import { USER_TABLE } from "../configs/schema";
 import { useUser } from "@clerk/nextjs";
+import { eq } from "drizzle-orm";
 import React, { useEffect } from "react";
 
 function Provider({ children }) {
   const { user } = useUser();
 
   useEffect(() => {
-    if (user) {
-      CheckUserExists();
-    }
+    user && CheckIsNewUser();
   }, [user]);
 
-  const CheckUserExists = async () => {
-    try {
-      console.log("Checking user:", user);
-      
-      const response = await fetch("/api/createAccount", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          user: user,
-        }),
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      console.log("User check result:", data);
-    } catch (error) {
-      console.error("Error checking user:", error);
+  /**
+   * Used to check is User is New or Not
+   */
+  const CheckIsNewUser = async () => {
+    // Check Is User Already Exist
+    const result = await db
+      .select()
+      .from(USER_TABLE)
+      .where(eq(USER_TABLE.email, user?.primaryEmailAddress?.emailAddress));
+
+    if (result?.length == 0) {
+      //If Not, Then add to DB
+      const userResp = await db
+        .insert(USER_TABLE)
+        .values({
+          name: user?.fullName,
+          email: user?.primaryEmailAddress?.emailAddress,
+        })
+        .returning({ id: USER_TABLE.id });
     }
+
+    // const resp=await axios.post('/api/create-user',{user:user});
+    // console.log(resp.data);
   };
 
   return <div>{children}</div>;
