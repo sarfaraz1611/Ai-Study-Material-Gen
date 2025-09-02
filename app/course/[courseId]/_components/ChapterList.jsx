@@ -15,7 +15,7 @@ function ChapterList({ course }) {
 
   return (
     <div className="mt-8">
-      <h2 className="font-bold text-3xl mb-8 text-gray-800 text-center">
+      <h2 className="font-bold text-3xl mb-8 text-gray-800 ">
         Course Chapters
       </h2>
 
@@ -28,7 +28,7 @@ function ChapterList({ course }) {
                 Chapter {chapterIndex + 1}
               </h2>
               <h3 className="text-2xl font-bold mb-6 text-white leading-tight">
-                {chapter.chapter_title}
+                {chapter.chapter_title || chapter.chapterTitle}
               </h3>
               <div className="flex justify-between text-sm text-white/90">
                 <div>
