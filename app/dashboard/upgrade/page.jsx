@@ -24,14 +24,14 @@ function Upgrade() {
     setUserDetail(result[0]);
   };
 
-  const OnCheckoutClick = async () => {
-    const result = await axios.post("/api/payment/checkout", {
-      priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_MONTHLY,
-    });
+  // const OnCheckoutClick = async () => {
+  //   const result = await axios.post("/api/payment/checkout", {
+  //     priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_MONTHLY,
+  //   });
 
-    console.log(result.data);
-    window.open(result.data?.url);
-  };
+  //   console.log(result.data);
+  //   window.open(result.data?.url);
+  // };
 
   const onPaymentMange = async () => {
     const result = await axios.post("/api/payment/manage-payment", {
@@ -252,7 +252,7 @@ function Upgrade() {
               </li>
             </ul>
 
-            {userDetail?.isMember == false ? (
+            {/* {userDetail?.isMember == false ? (
               <Button onClick={OnCheckoutClick} className="w-full mt-5">
                 Get Started
               </Button>
@@ -260,7 +260,7 @@ function Upgrade() {
               <Button onClick={onPaymentMange} className="w-full mt-5">
                 Manage Payment
               </Button>
-            )}
+            )} */}
           </div>
         </div>
       </div>
