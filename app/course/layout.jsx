@@ -1,5 +1,5 @@
 import React from "react";
-import DashboardHeader from "../dashboard/_components/DashboardHeader";
+import DashboardHeader from "../dashboard/_components/dashboardHeader";
 
 function CourseViewLayout({ children }) {
   return (

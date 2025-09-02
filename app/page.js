@@ -1,5 +1,5 @@
 import Image from "next/image";
-import DashboardHeader from "./dashboard/_components/DashboardHeader";
+import DashboardHeader from "./dashboard/_components/dashboardHeader";
 
 export default function Home() {
   return (

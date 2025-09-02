@@ -4,7 +4,7 @@ import axios from "axios";
 import { useParams } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import CourseIntroCard from "./_components/CourseIntroCard";
-import StudyMaterialSection from "./_components/StudyMaterialSection";
+import StudyMaterialSection from "./_components/studyMaterialSection";
 import ChapterList from "./_components/ChapterList";
 
 function Course() {

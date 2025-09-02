@@ -1,7 +1,7 @@
 "use client";
 import React, { useState } from "react";
-import SideBar from "./_components/SideBar";
-import DashboardHeader from "./_components/DashboardHeader";
+import SideBar from "./_components/sideBar";
+import DashboardHeader from "./_components/dashboardHeader";
 import { CourseCountContext } from "../_context/CourseCountContext";
 
 function DashboardLayout({ children }) {
