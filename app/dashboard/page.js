@@ -1,6 +1,6 @@
 
 import React from 'react'
-import WelcomeBanner from './_components/WelcomeBanner'
+import WelcomeBanner from './_components/welcomebanner'
 import CourseList from './_components/CourseList'
 
 function Dashboard() {

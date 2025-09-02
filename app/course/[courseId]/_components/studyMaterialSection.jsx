@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import MaterialCardItem from "./MaterialCardItem";
+import MaterialCardItem from "./MaterialCarditem";
 // import { db } from "@/configs/db";
 import axios from "axios";
 // import Link from "next/link";
